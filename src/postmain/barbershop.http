@@ -1,0 +1,998 @@
+# ============================================================
+# BARBERSHOP APP — FULL REST CLIENT
+# File: postman/barbershop.http
+# ============================================================
+
+@baseUrl = http://localhost:3000
+
+# ─── Paste tokens here after running signin requests ─────────
+@customerAccessToken = REPLACE_AFTER_CUSTOMER_SIGNIN
+@barberAccessToken   = REPLACE_AFTER_BARBER_SIGNIN
+@adminAccessToken    = REPLACE_AFTER_ADMIN_SIGNIN
+
+# ─── Replace these with real IDs from your DB ────────────────
+@customerId     = CUSTOMER_OBJECT_ID
+@barberId       = BARBER_OBJECT_ID
+@appointmentId  = APPOINTMENT_OBJECT_ID
+@serviceId      = SERVICE_OBJECT_ID
+@scheduleId     = SCHEDULE_OBJECT_ID
+@feedbackId     = FEEDBACK_OBJECT_ID
+@paymentId      = PAYMENT_OBJECT_ID
+@inventoryId    = INVENTORY_OBJECT_ID
+@resetToken     = RESET_TOKEN_FROM_FORGOT_PASSWORD
+
+
+# ============================================================
+# 0. HEALTH CHECK
+# ============================================================
+
+### [System] Health check
+GET {{baseUrl}}/health
+
+
+# ============================================================
+# 1. AUTH — SIGNUP
+# ============================================================
+
+### [Auth] Signup CUSTOMER
+POST {{baseUrl}}/api/v1/signup
+Content-Type: application/json
+
+{
+  "firstName": "Anna",
+  "lastName": "Nguyen",
+  "email": "anna.customer@example.com",
+  "password": "Customer123!",
+  "confirmPassword": "Customer123!",
+  "role": "customer"
+}
+
+
+### [Auth] Signup BARBER
+POST {{baseUrl}}/api/v1/signup
+Content-Type: application/json
+
+{
+  "firstName": "Bao",
+  "lastName": "Tran",
+  "email": "bao.barber@example.com",
+  "password": "Barber123!",
+  "confirmPassword": "Barber123!",
+  "role": "barber"
+}
+
+
+### [Auth] Signup ADMIN
+POST {{baseUrl}}/api/v1/signup
+Content-Type: application/json
+
+{
+  "firstName": "Admin",
+  "lastName": "User",
+  "email": "admin@example.com",
+  "password": "Admin123!",
+  "confirmPassword": "Admin123!",
+  "role": "admin"
+}
+
+
+# ============================================================
+# 2. AUTH — SIGNIN
+# ============================================================
+
+### [Auth] Signin CUSTOMER → copy data.accessToken → @customerAccessToken
+POST {{baseUrl}}/api/v1/signin
+Content-Type: application/json
+
+{
+  "email": "anna.customer@example.com",
+  "password": "Customer123!"
+}
+
+
+### [Auth] Signin BARBER → copy data.accessToken → @barberAccessToken
+POST {{baseUrl}}/api/v1/signin
+Content-Type: application/json
+
+{
+  "email": "bao.barber@example.com",
+  "password": "Barber123!"
+}
+
+
+### [Auth] Signin ADMIN → copy data.accessToken → @adminAccessToken
+POST {{baseUrl}}/api/v1/signin
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Admin123!"
+}
+
+
+# ============================================================
+# 3. AUTH — SIGNOUT
+# ============================================================
+
+### [Auth] Signout CUSTOMER
+POST {{baseUrl}}/api/v1/signout
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Auth] Signout BARBER
+POST {{baseUrl}}/api/v1/signout
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Auth] Refresh access token
+POST {{baseUrl}}/api/v1/refresh
+Authorization: Bearer {{customerAccessToken}}
+
+
+# ============================================================
+# 4. AUTH — ERROR CASES
+# ============================================================
+
+### [Auth Error] Wrong password (401)
+POST {{baseUrl}}/api/v1/signin
+Content-Type: application/json
+
+{
+  "email": "anna.customer@example.com",
+  "password": "WrongPass!"
+}
+
+
+### [Auth Error] Duplicate email signup (409)
+POST {{baseUrl}}/api/v1/signup
+Content-Type: application/json
+
+{
+  "firstName": "Anna",
+  "lastName": "Nguyen",
+  "email": "anna.customer@example.com",
+  "password": "Customer123!",
+  "confirmPassword": "Customer123!",
+  "role": "customer"
+}
+
+
+### [Auth Error] Missing fields signup (400)
+POST {{baseUrl}}/api/v1/signup
+Content-Type: application/json
+
+{
+  "email": "missing@example.com"
+}
+
+
+# ============================================================
+# 5. CUSTOMER — PROFILE
+# ============================================================
+
+### [Customer] Get my profile
+GET {{baseUrl}}/api/v1/customer/profile
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Customer] Update full profile
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "Fname": "Anna",
+  "Lname": "Nguyen",
+  "PhoneNo": "0901234567",
+  "Address": "123 Le Loi, Ho Chi Minh City",
+  "Gender": "female"
+}
+
+
+### [Customer] Update name only (partial)
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "Fname": "AnnaUpdated"
+}
+
+
+### [Customer] Update phone only
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "PhoneNo": "0912345678"
+}
+
+
+# ============================================================
+# 6. CUSTOMER — PASSWORD
+# ============================================================
+
+### [Customer] Change password
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "Customer123!",
+  "newPassword": "NewSecure456!",
+  "confirmNewPassword": "NewSecure456!"
+}
+
+
+### [Customer] Change password back (for retesting)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "NewSecure456!",
+  "newPassword": "Customer123!",
+  "confirmNewPassword": "Customer123!"
+}
+
+
+### [Customer] Forgot password (public)
+POST {{baseUrl}}/api/v1/customer/forgot-password
+Content-Type: application/json
+
+{
+  "email": "anna.customer@example.com"
+}
+
+
+### [Customer] Reset password (paste token from forgot-password response)
+POST {{baseUrl}}/api/v1/customer/reset-password
+Content-Type: application/json
+
+{
+  "token": "{{resetToken}}",
+  "newPassword": "Customer123!",
+  "confirmNewPassword": "Customer123!"
+}
+
+
+# ============================================================
+# 7. CUSTOMER — PASSWORD ERROR CASES
+# ============================================================
+
+### [Error] Wrong current password (403)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "WrongPassword!",
+  "newPassword": "NewSecure456!",
+  "confirmNewPassword": "NewSecure456!"
+}
+
+
+### [Error] New passwords don't match (400)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "Customer123!",
+  "newPassword": "NewSecure456!",
+  "confirmNewPassword": "DifferentPass!"
+}
+
+
+### [Error] Same as current password (400)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "Customer123!",
+  "newPassword": "Customer123!",
+  "confirmNewPassword": "Customer123!"
+}
+
+
+### [Error] Forgot password – invalid email format (400)
+POST {{baseUrl}}/api/v1/customer/forgot-password
+Content-Type: application/json
+
+{
+  "email": "not-an-email"
+}
+
+
+### [Error] Forgot password – non-existent email (200 anti-enumeration)
+POST {{baseUrl}}/api/v1/customer/forgot-password
+Content-Type: application/json
+
+{
+  "email": "ghost@notexist.com"
+}
+
+
+### [Error] Reset – invalid/expired token (400)
+POST {{baseUrl}}/api/v1/customer/reset-password
+Content-Type: application/json
+
+{
+  "token": "invalidtoken000",
+  "newPassword": "TestPass123!",
+  "confirmNewPassword": "TestPass123!"
+}
+
+
+# ============================================================
+# 8. BARBER — PROFILE & PHOTO
+# ============================================================
+
+### [Barber] Get my profile
+GET {{baseUrl}}/api/v1/barber/me
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Barber] Update full profile
+PUT {{baseUrl}}/api/v1/barber/me
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "Fname": "Bao",
+  "Lname": "Tran",
+  "phoneNo": "0902222333",
+  "bio": "10+ years experience in fades, classic cuts and beard design.",
+  "skills": ["skin fade", "scissor cut", "beard trim", "hot towel shave"],
+  "specialties": ["modern fade", "wedding styles", "Asian hair textures"]
+}
+
+
+### [Barber] Update bio only
+PUT {{baseUrl}}/api/v1/barber/me
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "bio": "Specialist in Korean fade and beard sculpture."
+}
+
+
+### [Barber] Update skills only
+PUT {{baseUrl}}/api/v1/barber/me
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "skills": ["skin fade", "taper fade", "undercut"]
+}
+
+
+### [Barber] Upload photo via cURL (copy this to terminal)
+# curl -X PATCH http://localhost:3000/api/v1/barber/photo \
+#   -H "Authorization: Bearer YOUR_BARBER_TOKEN" \
+#   -F "avatar=@/path/to/photo.jpg"
+
+
+# ============================================================
+# 9. BARBER — SEARCH
+# ============================================================
+
+### [Barber] Search by email
+GET {{baseUrl}}/api/v1/barber/by-email?email=bao.barber@example.com
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Barber] Search by phone
+GET {{baseUrl}}/api/v1/barber/by-phone?phoneNo=0902222333
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Barber] Smart search (email OR phone)
+GET {{baseUrl}}/api/v1/barber/search?email=bao.barber@example.com
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Barber] Smart search by phone fallback
+GET {{baseUrl}}/api/v1/barber/search?phoneNo=0902222333
+Authorization: Bearer {{adminAccessToken}}
+
+
+# ============================================================
+# 10. BARBER — EARNINGS SUMMARY
+# ============================================================
+
+### [Earnings] Today
+GET {{baseUrl}}/api/v1/barber/earnings?range=day
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Earnings] This week
+GET {{baseUrl}}/api/v1/barber/earnings?range=week
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Earnings] This month
+GET {{baseUrl}}/api/v1/barber/earnings?range=month
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Error] Invalid earnings range (400)
+GET {{baseUrl}}/api/v1/barber/earnings?range=year
+Authorization: Bearer {{barberAccessToken}}
+
+
+# ============================================================
+# 11. SCHEDULE
+# ============================================================
+
+### [Schedule] Admin creates barber shift
+POST {{baseUrl}}/api/v1/schedules
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "STime": "09:00",
+  "ETime": "17:00",
+  "DaysOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+}
+
+
+### [Schedule] Admin creates weekend shift
+POST {{baseUrl}}/api/v1/schedules
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "STime": "10:00",
+  "ETime": "15:00",
+  "DaysOfWeek": ["Saturday", "Sunday"]
+}
+
+
+### [Schedule] Get barber schedule (all)
+GET {{baseUrl}}/api/v1/schedules/barber/{{barberId}}
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Schedule] Get barber schedule (active only)
+GET {{baseUrl}}/api/v1/schedules/barber/{{barberId}}?onlyActive=true
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Schedule] Find available barbers for a slot
+GET {{baseUrl}}/api/v1/schedules/available?day=Monday&STime=10:00&ETime=11:00
+
+
+### [Schedule] Update shift times
+PUT {{baseUrl}}/api/v1/schedules/{{scheduleId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "STime": "08:00",
+  "ETime": "16:00"
+}
+
+
+### [Schedule] Deactivate shift
+PATCH {{baseUrl}}/api/v1/schedules/{{scheduleId}}/toggle
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "isAvailable": false
+}
+
+
+### [Schedule] Re-activate shift
+PATCH {{baseUrl}}/api/v1/schedules/{{scheduleId}}/toggle
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "isAvailable": true
+}
+
+
+### [Schedule] Delete shift (admin only)
+DELETE {{baseUrl}}/api/v1/schedules/{{scheduleId}}
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Error] Overlapping schedule (409)
+POST {{baseUrl}}/api/v1/schedules
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "STime": "10:00",
+  "ETime": "14:00",
+  "DaysOfWeek": ["Monday"]
+}
+
+
+# ============================================================
+# 12. SERVICE (CRUD)
+# ============================================================
+
+### [Service] Public: list all active services
+GET {{baseUrl}}/api/v1/services
+
+
+### [Service] Public: filter by type
+GET {{baseUrl}}/api/v1/services?type=haircut
+
+
+### [Service] Public: get single service
+GET {{baseUrl}}/api/v1/services/{{serviceId}}
+
+
+### [Service] Admin: list ALL (incl. inactive)
+GET {{baseUrl}}/api/v1/services/admin?status=inactive
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Service] Admin: create haircut
+POST {{baseUrl}}/api/v1/services
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "Sname": "Classic Haircut",
+  "Price": 80000,
+  "Duration": 30,
+  "Type": "haircut",
+  "Description": "Classic scissor cut with wash and style."
+}
+
+
+### [Service] Admin: create combo
+POST {{baseUrl}}/api/v1/services
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "Sname": "Haircut + Beard Combo",
+  "Price": 150000,
+  "Duration": 60,
+  "Type": "combo",
+  "Description": "Full haircut with beard trim and hot towel shave."
+}
+
+
+### [Service] Admin: create shave
+POST {{baseUrl}}/api/v1/services
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "Sname": "Hot Towel Shave",
+  "Price": 70000,
+  "Duration": 25,
+  "Type": "shave",
+  "Description": "Traditional hot towel straight razor shave."
+}
+
+
+### [Service] Admin: update price and duration
+PUT {{baseUrl}}/api/v1/services/{{serviceId}}
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "Price": 90000,
+  "Duration": 35
+}
+
+
+### [Service] Admin: disable service (soft)
+PATCH {{baseUrl}}/api/v1/services/{{serviceId}}/toggle
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "isActive": false
+}
+
+
+### [Service] Admin: re-enable service
+PATCH {{baseUrl}}/api/v1/services/{{serviceId}}/toggle
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "isActive": true
+}
+
+
+### [Service] Admin: permanent delete
+DELETE {{baseUrl}}/api/v1/services/{{serviceId}}
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Error] Duplicate service name (409)
+POST {{baseUrl}}/api/v1/services
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "Sname": "Classic Haircut",
+  "Price": 70000,
+  "Duration": 25,
+  "Type": "haircut"
+}
+
+
+# ============================================================
+# 13. APPOINTMENT
+# ============================================================
+
+### [Appointment] Customer creates appointment
+POST {{baseUrl}}/api/v1/appointments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "serviceIds": ["{{serviceId}}"],
+  "startTime": "2026-04-01T10:00:00.000Z",
+  "notes": "Please use scissors only"
+}
+
+
+### [Appointment] Customer views their appointments
+GET {{baseUrl}}/api/v1/appointments/me
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Appointment] Barber views schedule (all)
+GET {{baseUrl}}/api/v1/appointments/barber
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Appointment] Barber views schedule (filtered by date + status)
+GET {{baseUrl}}/api/v1/appointments/barber?date=2026-04-01&status=scheduled
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Appointment] Get single appointment detail
+GET {{baseUrl}}/api/v1/appointments/{{appointmentId}}
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Appointment] Barber marks appointment as completed
+PUT {{baseUrl}}/api/v1/appointments/{{appointmentId}}
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "status": "completed",
+  "notes": "Customer asked for extra beard trim"
+}
+
+
+### [Appointment] Customer cancels appointment
+DELETE {{baseUrl}}/api/v1/appointments/{{appointmentId}}
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "reason": "Change of plans"
+}
+
+
+### [Error] Book in the past (400)
+POST {{baseUrl}}/api/v1/appointments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "serviceIds": ["{{serviceId}}"],
+  "startTime": "2020-01-01T10:00:00.000Z"
+}
+
+
+### [Error] Double booking same barber same time (409)
+POST {{baseUrl}}/api/v1/appointments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "serviceIds": ["{{serviceId}}"],
+  "startTime": "2026-04-01T10:00:00.000Z"
+}
+
+
+# ============================================================
+# 14. FEEDBACK
+# ============================================================
+
+### [Feedback] Customer leaves feedback
+POST {{baseUrl}}/api/v1/feedback
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "rating": 5,
+  "comments": "Excellent service! Very clean and professional."
+}
+
+
+### [Feedback] Public: get barber feedbacks
+GET {{baseUrl}}/api/v1/feedback/barber/{{barberId}}?page=1&limit=10
+
+
+### [Feedback] Customer views their feedbacks
+GET {{baseUrl}}/api/v1/feedback/me
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Feedback] Get single feedback detail
+GET {{baseUrl}}/api/v1/feedback/{{feedbackId}}
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Feedback] Customer updates their feedback
+PUT {{baseUrl}}/api/v1/feedback/{{feedbackId}}
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "rating": 4,
+  "comments": "Great service, but had to wait a bit longer than expected."
+}
+
+
+### [Feedback] Admin hides feedback
+PATCH {{baseUrl}}/api/v1/feedback/{{feedbackId}}/moderate
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "hidden"
+}
+
+
+### [Feedback] Admin flags feedback for review
+PATCH {{baseUrl}}/api/v1/feedback/{{feedbackId}}/moderate
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "status": "flagged"
+}
+
+
+### [Feedback] Admin gets flagged review queue
+GET {{baseUrl}}/api/v1/feedback/flagged
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Feedback] Customer deletes their own feedback
+DELETE {{baseUrl}}/api/v1/feedback/{{feedbackId}}
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Error] Feedback without completed appointment (403)
+POST {{baseUrl}}/api/v1/feedback
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "barberId": "{{barberId}}",
+  "rating": 5,
+  "comments": "Trying without appointment."
+}
+
+
+# ============================================================
+# 15. PAYMENT
+# ============================================================
+
+### [Payment] Customer creates payment (MoMo — default)
+POST {{baseUrl}}/api/v1/payments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "appointmentId": "{{appointmentId}}",
+  "amount": 150000,
+  "method": "wallet",
+  "currency": "VND",
+  "provider": "momo",
+  "idempotencyKey": "PAY_APPT_001_20260401"
+}
+
+
+### [Payment] Customer creates payment (cash)
+POST {{baseUrl}}/api/v1/payments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "appointmentId": "{{appointmentId}}",
+  "amount": 80000,
+  "method": "cash",
+  "currency": "VND",
+  "idempotencyKey": "PAY_CASH_001_20260401"
+}
+
+
+### [Payment] Customer creates payment (Stripe)
+POST {{baseUrl}}/api/v1/payments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "appointmentId": "{{appointmentId}}",
+  "amount": 150000,
+  "method": "card",
+  "currency": "vnd",
+  "provider": "stripe",
+  "idempotencyKey": "PAY_STRIPE_001_20260401"
+}
+
+
+### [Payment] Customer creates payment (ZaloPay)
+POST {{baseUrl}}/api/v1/payments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "appointmentId": "{{appointmentId}}",
+  "amount": 150000,
+  "method": "wallet",
+  "currency": "VND",
+  "provider": "zalopay",
+  "idempotencyKey": "PAY_ZALO_001_20260401"
+}
+
+
+### [Payment] Customer views their payments
+GET {{baseUrl}}/api/v1/payments/me
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Payment] Customer views their payments (paginated)
+GET {{baseUrl}}/api/v1/payments/me?page=1&limit=5
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Payment] Barber views payments for appointment
+GET {{baseUrl}}/api/v1/payments/appointment/{{appointmentId}}
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Payment] Admin views all payments
+GET {{baseUrl}}/api/v1/payments
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Payment] Admin filters by status
+GET {{baseUrl}}/api/v1/payments?status=success
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Payment] Admin filters by method
+GET {{baseUrl}}/api/v1/payments?method=cash
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Payment] Get single payment detail
+GET {{baseUrl}}/api/v1/payments/{{paymentId}}
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Payment] Admin refunds a payment
+POST {{baseUrl}}/api/v1/payments/{{paymentId}}/refund
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Error] Duplicate idempotency key (409)
+POST {{baseUrl}}/api/v1/payments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "appointmentId": "{{appointmentId}}",
+  "amount": 150000,
+  "method": "wallet",
+  "currency": "VND",
+  "provider": "momo",
+  "idempotencyKey": "PAY_APPT_001_20260401"
+}
+
+
+### [Error] Pay for cancelled appointment (409)
+POST {{baseUrl}}/api/v1/payments
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "appointmentId": "{{appointmentId}}",
+  "amount": 80000,
+  "method": "cash",
+  "currency": "VND",
+  "idempotencyKey": "PAY_CANCELLED_001"
+}
+
+
+# ============================================================
+# 16. INVENTORY
+# ============================================================
+
+### [Inventory] Admin: get all inventory
+GET {{baseUrl}}/api/v1/inventory
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Inventory] Admin: get low stock items
+GET {{baseUrl}}/api/v1/inventory/low-stock
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Inventory] Admin: get inventory by product
+GET {{baseUrl}}/api/v1/inventory/product/PRODUCT_ID_HERE
+Authorization: Bearer {{adminAccessToken}}
+
+
+### [Inventory] Admin: restock product
+PATCH {{baseUrl}}/api/v1/inventory/{{inventoryId}}/add-stock
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 50
+}
+
+
+### [Inventory] Admin: reduce stock
+PATCH {{baseUrl}}/api/v1/inventory/{{inventoryId}}/reduce-stock
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "quantity": 5
+}
+
+
+# ============================================================
+# 17. API KEY
+# ============================================================
+
+### [ApiKey] Admin creates API key (limited permissions)
+POST {{baseUrl}}/api/v1/admin/api-keys
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "Booking Widget",
+  "permissions": ["0000", "2222"],
+  "expiresAt": "2027-01-01T00:00:00.000Z"
+}
+
+
+### [ApiKey] Admin creates FULL_ACCESS API key
+POST {{baseUrl}}/api/v1/admin/api-keys
+Content-Type: application/json
+Authorization: Bearer {{adminAccessToken}}
+
+{
+  "name": "Internal Dashboard",
+  "permissions": ["xxxx"],
+  "expiresAt": "2027-12-31T00:00:00.000Z"
+}
+
+
+### [ApiKey] Partner: call protected endpoint with API key
+GET {{baseUrl}}/api/v1/partner/appointments
+X-API-Key: YOUR_PLAIN_API_KEY_HERE

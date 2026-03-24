@@ -1,0 +1,1 @@
+// String manipulation, casing, text generation

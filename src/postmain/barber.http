@@ -1,0 +1,98 @@
+@baseUrl = http://localhost:3000
+@barberAccessToken = REPLACE_WITH_TOKEN_FROM_SIGNIN
+
+############################
+# 0. AUTH – GET TOKEN FIRST
+############################
+
+### [Auth] Sign in as BARBER
+POST {{baseUrl}}/api/v1/signin
+Content-Type: application/json
+
+{
+  "email": "bao.barber@example.com",
+  "password": "Barber123!"
+}
+# Copy data.accessToken → @barberAccessToken
+
+
+############################
+# 1. BARBER PROFILE
+############################
+
+### [Barber] Get my profile
+GET {{baseUrl}}/api/v1/barber/me
+Authorization: Bearer {{barberAccessToken}}
+
+
+### [Barber] Update profile (bio, skills, specialties)
+PUT {{baseUrl}}/api/v1/barber/me
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "Fname": "Bao",
+  "Lname": "Tran",
+  "phoneNo": "0902222333",
+  "bio": "10+ years experience in fades, classic cuts and beard design.",
+  "skills": ["skin fade", "scissor cut", "beard trim"],
+  "specialties": ["modern fade", "wedding styles"]
+}
+
+
+### [Barber] Update bio only
+PUT {{baseUrl}}/api/v1/barber/me
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "bio": "Updated bio: specialist in Asian hair textures."
+}
+
+
+############################
+# 2. BARBER PHOTO
+############################
+
+### [Barber] Upload profile photo
+# Use curl or Postman; VS Code REST client cannot attach binary easily.
+#
+# curl example:
+# curl -X PATCH {{baseUrl}}/api/v1/barber/photo \
+#   -H "Authorization: Bearer YOUR_BARBER_TOKEN" \
+#   -F "avatar=@/path/to/photo.jpg"
+#
+
+
+############################
+# 3. EARNINGS SUMMARY
+############################
+
+### [Earnings] Today
+GET {{baseUrl}}/api/v1/barber/earnings?range=day
+Authorization: Bearer {{barberAccessToken}}
+
+### [Earnings] This week
+GET {{baseUrl}}/api/v1/barber/earnings?range=week
+Authorization: Bearer {{barberAccessToken}}
+
+### [Earnings] This month
+GET {{baseUrl}}/api/v1/barber/earnings?range=month
+Authorization: Bearer {{barberAccessToken}}
+
+
+############################
+# 4. ERROR CASES
+############################
+
+### [Error] Update profile as barber with invalid phone
+PUT {{baseUrl}}/api/v1/barber/me
+Content-Type: application/json
+Authorization: Bearer {{barberAccessToken}}
+
+{
+  "phoneNo": "not-a-phone"
+}
+
+### [Error] Earnings without token
+GET {{baseUrl}}/api/v1/barber/earnings?range=day

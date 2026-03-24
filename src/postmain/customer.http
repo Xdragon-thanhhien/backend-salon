@@ -1,0 +1,231 @@
+@baseUrl = http://localhost:3000
+@customerAccessToken = REPLACE_WITH_TOKEN_FROM_SIGNIN
+
+############################
+# 0. AUTH – GET TOKEN FIRST
+############################
+
+### [Auth] Sign in to get customerAccessToken
+# Copy "data.accessToken" from response → paste into @customerAccessToken above
+POST {{baseUrl}}/api/v1/signin
+Content-Type: application/json
+
+{
+  "email": "anna.customer@example.com",
+  "password": "Customer123!"
+}
+
+
+############################
+# 1. PROFILE
+############################
+
+### [Profile] Get my profile
+GET {{baseUrl}}/api/v1/customer/profile
+Authorization: Bearer {{customerAccessToken}}
+
+
+### [Profile] Update name + phone + address
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "Fname": "Anna",
+  "Lname": "Nguyen",
+  "PhoneNo": "0901234567",
+  "Address": "123 Le Loi Street, Ho Chi Minh City",
+  "Gender": "female"
+}
+
+
+### [Profile] Update name only (partial update)
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "Fname": "AnnaUpdated"
+}
+
+
+### [Profile] Update phone only
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "PhoneNo": "0912345678"
+}
+
+
+############################
+# 2. CHANGE PASSWORD
+############################
+
+### [Password] Change password (success)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "Customer123!",
+  "newPassword": "NewSecure456!",
+  "confirmNewPassword": "NewSecure456!"
+}
+
+
+### [Password] Change password back (for retesting)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "NewSecure456!",
+  "newPassword": "Customer123!",
+  "confirmNewPassword": "Customer123!"
+}
+
+
+############################
+# 3. FORGOT / RESET PASSWORD
+############################
+
+### [ForgotPassword] Request reset token (public)
+# In dev: response includes resetToken for testing
+# In prod: token sent via email only
+POST {{baseUrl}}/api/v1/customer/forgot-password
+Content-Type: application/json
+
+{
+  "email": "anna.customer@example.com"
+}
+
+
+### [ResetPassword] Reset with token from forgot-password response
+# Replace RESET_TOKEN_HERE with token from step above
+POST {{baseUrl}}/api/v1/customer/reset-password
+Content-Type: application/json
+
+{
+  "token": "RESET_TOKEN_HERE",
+  "newPassword": "Customer123!",
+  "confirmNewPassword": "Customer123!"
+}
+
+
+############################
+# 4. AVATAR UPLOAD
+############################
+
+### [Avatar] Upload avatar image
+# VS Code REST Client does not support binary file upload directly.
+# Use one of the alternatives below:
+#
+# ─── Option A: cURL (terminal) ────────────────────────────────────────
+# curl -X PATCH {{baseUrl}}/api/v1/customer/avatar \
+#   -H "Authorization: Bearer YOUR_TOKEN" \
+#   -F "avatar=@/path/to/your/avatar.jpg"
+#
+# ─── Option B: Postman ────────────────────────────────────────────────
+# Method : PATCH
+# URL    : http://localhost:3000/api/v1/customer/avatar
+# Auth   : Bearer Token → paste customerAccessToken
+# Body   : form-data
+#          Key  : avatar  (type: File)
+#          Value: select your image file
+
+
+############################
+# 5. ERROR CASES
+############################
+
+### [Error] Get profile without token (401)
+GET {{baseUrl}}/api/v1/customer/profile
+
+
+### [Error] Update with invalid phone format (400)
+PUT {{baseUrl}}/api/v1/customer/profile
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "PhoneNo": "not-a-phone"
+}
+
+
+### [Error] Change password – wrong current password (403)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "WrongPassword!",
+  "newPassword": "NewSecure456!",
+  "confirmNewPassword": "NewSecure456!"
+}
+
+
+### [Error] Change password – new passwords don't match (400)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "Customer123!",
+  "newPassword": "NewSecure456!",
+  "confirmNewPassword": "DifferentPass!"
+}
+
+
+### [Error] Change password – same as current (400)
+PATCH {{baseUrl}}/api/v1/customer/change-password
+Content-Type: application/json
+Authorization: Bearer {{customerAccessToken}}
+
+{
+  "currentPassword": "Customer123!",
+  "newPassword": "Customer123!",
+  "confirmNewPassword": "Customer123!"
+}
+
+
+### [Error] Forgot password – invalid email format (400)
+POST {{baseUrl}}/api/v1/customer/forgot-password
+Content-Type: application/json
+
+{
+  "email": "not-an-email"
+}
+
+
+### [Error] Forgot password – non-existent email (200 anti-enumeration)
+# Should return 200 OK regardless (security: prevent user enumeration)
+POST {{baseUrl}}/api/v1/customer/forgot-password
+Content-Type: application/json
+
+{
+  "email": "ghost@notexist.com"
+}
+
+
+### [Error] Reset password – invalid/expired token (400)
+POST {{baseUrl}}/api/v1/customer/reset-password
+Content-Type: application/json
+
+{
+  "token": "invalidtoken000",
+  "newPassword": "TestPass123!",
+  "confirmNewPassword": "TestPass123!"
+}
+
+
+### [Error] Reset password – passwords don't match (400)
+POST {{baseUrl}}/api/v1/customer/reset-password
+Content-Type: application/json
+
+{
+  "token": "RESET_TOKEN_HERE",
+  "newPassword": "TestPass123!",
+  "confirmNewPassword": "DifferentPass!"
+}
