@@ -1,16 +1,15 @@
-# Fix VSCode "Connection Rejected" Error (REST Client / Backend Not Running)
+# Auth HTTP Testing & Fix TODO
 
-## Status: In Progress
+## Fix identified issues first
+- [x] Fix `UnauthorizedError` usage in `src/controllers/auth.controller.js` (use exported `AuthFailureError`)
+- [x] Remove `Gender` from register payload in `src/postmain/auth.http`
+- [x] Fix model-name collision risk in `src/models/baber.models.js` (`User` -> `Barber`)
+- [x] Fix model-name collision risk in `src/models/customer.models.js` (`User` -> `Customer`)
+- [x] Create and run DB repair script to clean legacy `users` conflicts and ensure auth user baseline in `Users`
 
-### Steps:
-- [ ] 1. Fix salon/backend/server.js (empty file)
-- [ ] 2. cd f:/my-app/salon/salon/backend &amp;&amp; docker compose up -d
-- [ ] 3. cd f:/my-app/salon/salon/backend &amp;&amp; npm install &amp;&amp; npm start
-- [ ] 4. Test: Click "Send Request" on customer.http signin or GET /health
-- [ ] 5. VSCode: Ctrl+Shift+P > "Preferences: Open User Settings (JSON)" - remove "http.proxy" if present
-- [x] Done ✅
-
-**Current Issue:** Backend server not running on port 3000 (confirmed no listener)
-
-**Expected:** After step 3, localhost:3000/health returns OK JSON
-
+## Critical-path testing
+- [x] Test Register endpoint (`POST /api/v1/auth/register`) *(result: 409 Conflict expected for existing repaired user email)*
+- [x] Test Login endpoint (`POST /api/v1/auth/login`)
+- [x] Test Me endpoint (`GET /api/v1/auth/me`)
+- [x] Test Wrong-password endpoint behavior (`POST /api/v1/auth/login`, expect 401)
+- [ ] Summarize final critical-path test results

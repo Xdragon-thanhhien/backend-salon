@@ -1,0 +1,58 @@
+@baseUrl = http://localhost:3000
+@token = REPLACE_WITH_TOKEN_FROM_LOGIN_RESPONSE
+
+########################################
+# AUTH API TEST FLOW (REST CLIENT)
+########################################
+# IMPORTANT:
+# 1) Start server first (npm run dev / npm start)
+# 2) Check server log for real port:
+#    app may auto-switch to 3001, 3002... if 3000 is busy.
+#    If so, update @baseUrl above.
+# 3) Run requests in this order:
+#    Register -> Login -> copy token -> Me
+
+### [1] Register new customer
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "Fname": "Tuan",
+  "Lname": "Nguyen",
+  "PhoneNo": "0912345678",
+  "Address": "Buon Ma Thuot",
+  "email": "tuan.customer2@example.com",
+  "password": "12345678"
+}
+
+###
+
+### [2] Login and get JWT token
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "tuan.customer2@example.com",
+  "password": "12345678"
+}
+
+# Copy token from response path:
+# data.token
+# Then replace @token above.
+
+###
+
+### [3] Get current profile (/me) - protected
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{token}}
+
+###
+
+### [4] Wrong password example (expected 401 Unauthorized)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "tuan.customer2@example.com",
+  "password": "wrong-password"
+}
